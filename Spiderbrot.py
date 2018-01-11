@@ -11,6 +11,9 @@ from cmath import *
 import os
 from PIL import Image, ImageDraw
 
+import threading
+
+
 bkgColor = "white"
 windowWidth = 4100
 windowHeight = 4000
@@ -39,7 +42,7 @@ accelerationScalingFactor=0.001
 # the spatial resolution of the patterns high.
 maxPositionChangePerIteration = 0.02
 
-setworldcoordinates(-5,-5,5,5)
+setworldcoordinates(-2,-2,2,2)
 
 
 def bifurcateVector(v,alpha):
@@ -52,7 +55,7 @@ def bifurcateVector(v,alpha):
 
 # Keeps us from plotting too far into the generally boring regions
 # beyond a few units from the origin.
-maxDistanceFromOrigin = 50
+maxDistanceFromOrigin = 2
 
 def makeTrack(drawingCb,completedCb, accelCb=(lambda p: p**2),
               initialPosition=(0+0j),
@@ -102,7 +105,7 @@ def makeTrack(drawingCb,completedCb, accelCb=(lambda p: p**2),
         timeScaleFactor = newTSF if (newTSF < 1) else 1
         p = p + v * newTSF       
         i = i + 1
-        if abs(j) > 0.003:
+        if abs(j) > 0.003 and i != 1:
             (v1,v2) = bifurcateVector(v,0.2)
             makeTrack(drawingCb,completedCb, accelCb=(lambda p: p**2),
               initialPosition=p,
@@ -217,6 +220,7 @@ def makeMovie(startPower, endPower, stepsPerPower, baseFilename, startFrame = 0)
     endPower = endPower * stepsPerPower 
     startPower = startPower * stepsPerPower
     frameCount = startFrame
+    baseFilename = "NOSYNC/" + baseFilename
     for n in map(lambda x: x/float(stepsPerPower),
                  range(int(startPower),int(endPower) + 1)):
     #for n in range (startPower, endPower, powerStep):
@@ -287,4 +291,4 @@ def makeMovie(startPower, endPower, stepsPerPower, baseFilename, startFrame = 0)
         #image1.save(filename + ".jpg")
         
 
-makeMovie(1, 6, 1000, "spbif")
+#makeMovie(1, 6, 1000, "spbif")
