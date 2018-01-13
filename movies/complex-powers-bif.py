@@ -11,5 +11,5 @@ import Spiderbrot
 
 
 
-turtle.setworldcoordinates(-4,-4,4,4)
-Spiderbrot.makeMovie(1, 6, 1000, "spbif2")
+turtle.setworldcoordinates(-3,-3,3,3)
+Spiderbrot.makeParallelMovie(0, 10000, 1000, "spbif4", 2)

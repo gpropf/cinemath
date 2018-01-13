@@ -18,6 +18,9 @@ bkgColor = "white"
 windowWidth = 4100
 windowHeight = 4000
 captionCircleRadius = 20
+maxIterations = 200
+bifurcationAngle = 0.5
+jerkThreshold = 0.0005
 
 setup(windowWidth,windowHeight)
 
@@ -93,7 +96,7 @@ def makeTrack(drawingCb,completedCb, accelCb=(lambda p: p**2),
     goto(initialPosition.real*windowScaleFactor,initialPosition.imag*windowScaleFactor)
     pendown()
     tracer(0)
-    while(not completedCb(i,p - p_init,v,a,j,200)):
+    while(not completedCb(i,p - p_init,v,a,j,maxIterations)):
         drawingCb(i,p*windowScaleFactor,v,a,j)
         old_a = a
         a = accelerationScalingFactor * accelCb(p)
@@ -103,19 +106,21 @@ def makeTrack(drawingCb,completedCb, accelCb=(lambda p: p**2),
         v = v * d
         newTSF = maxPositionChangePerIteration/abs(v)
         timeScaleFactor = newTSF if (newTSF < 1) else 1
+        if abs(j) > jerkThreshold and i != 1:
+            i = maxIterations + 1
+            (v1,v2) = bifurcateVector(v,bifurcationAngle)
+            (v11,v12) = bifurcateVector(v1,bifurcationAngle/2)
+            (v21,v22) = bifurcateVector(v2,bifurcationAngle/2)
+
+            for vbif in [v11,v12,v21,v22]:
+            
+                makeTrack(drawingCb,completedCb, accelCb=accelCb,
+                          initialPosition=p,
+                          initialVelocity=vbif,              
+                          windowScaleFactor=1,dragCoefficient=0,remainingRecursions = remainingRecursions - 1)
+    
         p = p + v * newTSF       
         i = i + 1
-        if abs(j) > 0.003 and i != 1:
-            (v1,v2) = bifurcateVector(v,0.2)
-            makeTrack(drawingCb,completedCb, accelCb=(lambda p: p**2),
-              initialPosition=p,
-              initialVelocity=v1,              
-                      windowScaleFactor=1,dragCoefficient=0,remainingRecursions = remainingRecursions - 1)
-            
-            makeTrack(drawingCb,completedCb, accelCb=(lambda p: p**2),
-              initialPosition=p,
-              initialVelocity=v2,              
-                      windowScaleFactor=1,dragCoefficient=0,remainingRecursions = remainingRecursions - 1)
     penup()
             
     #showturtle()
@@ -193,7 +198,7 @@ def drawSpiderBifurcate(accelCb=(lambda p: p**2)):
     pensize(0.5)
     tracer(False)
     clear()
-    for theta in range(0,360,60):
+    for theta in range(30,360,60):
         thetaRads = theta*(2*pi/360)
         iv = cos(thetaRads) + sin(thetaRads) * 1j
         iv = iv * initialVelocityScaleFactor
@@ -292,3 +297,50 @@ def makeMovie(startPower, endPower, stepsPerPower, baseFilename, startFrame = 0)
         
 
 #makeMovie(1, 6, 1000, "spbif")
+
+def makeMovieFrames(startFrame, endFrame, framesPerPower, baseFilename):
+    baseFilename = "NOSYNC/" + baseFilename
+    tracer(0,0)
+    hideturtle()
+
+    for frame in range(startFrame, endFrame):
+        n = frame / framesPerPower
+        drawSpiderBifurcate((lambda p: p**n))
+        update()
+        fileIndexStr = str(frame).zfill(6)
+        cv = getscreen().getcanvas()
+        cv.pack()
+        filename = baseFilename + "_" + fileIndexStr
+        psFileName = filename + ".ps"
+        cv.postscript(file=psFileName,
+                      colormode='color', rotate='0')
+        
+        shellCmd = "pstopnm -ysize 4000 -xsize 4100 {0}.ps -stdout | ppmchange '#ffffff' '#000000' | pnmrotate -90 | ppmtojpeg >{0}.jpg".format(filename) 
+        print(shellCmd)
+        os.system(shellCmd)
+        os.remove(psFileName)
+        print("n = " + str(n) + ", frame = " + str(frame))
+
+        
+
+
+def makeParallelMovie(startFrame, endFrame, framesPerPower, baseFilename, cpus=1):
+    """ Does not, in fact, mave the movie in parallel. Using Tk in parallel
+    is apparently more trouble than it's worth. """
+    
+#    powerRange = endPower - startPower
+#    totalFrames = powerRange * framesPerPower
+    framesPerCPU = int(endFrame / cpus)
+
+    cpu = 0
+#    threads = []
+    for cpuStartFrame in range(0,endFrame,framesPerCPU):
+#        t = threading.Thread(target = makeMovieFrames, args = [cpuStartFrame, cpuStartFrame + framesPerCPU, framesPerPower, baseFilename])
+        print("CPU = " + str(cpu) + ", startFrame = " + str(cpuStartFrame))
+        cpu = cpu + 1
+#        threads.append(t)
+#        t.start()
+        makeMovieFrames(cpuStartFrame, cpuStartFrame + framesPerCPU, framesPerPower, baseFilename)
+    
+        
+    
