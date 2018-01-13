@@ -228,51 +228,15 @@ def makeMovie(startPower, endPower, stepsPerPower, baseFilename, startFrame = 0)
     baseFilename = "NOSYNC/" + baseFilename
     for n in map(lambda x: x/float(stepsPerPower),
                  range(int(startPower),int(endPower) + 1)):
-    #for n in range (startPower, endPower, powerStep):
-    #while (n <= endPower):
+
         tracer(0,0)
         hideturtle()
-
-        #pendown()
-        #goto(0,0)
-        #color((0.5,1,1),bkgColor)
-        # begin_fill()
-        #circle(radius=1000,steps=50)
-        #end_fill()
-        #penup()
-        #makeBoxAtCenter(4)
         drawSpiderBifurcate((lambda p: p**n))
-        #showturtle()
+
         update()
-        # penup()
-        # goto (0,0)
-        # pendown()
-        # pensize(2)
-        # color((0.5,1,1),bkgColor)
-        # begin_fill()
-        # circle(radius=2,steps=50)
-        # end_fill()
-        # penup()
-        # goto (caption_x,caption_y+captionCircleRadius/2+4)
-        # pendown()
-        # captionString = "n = {0:.2f}".format(n)
-        # print("Caption:" + captionString)
-        # write(captionString, move=False, align="center", font=("Arial", 8, "normal"))
-        # penup()
-        # #turtle.write((0,0), True)
-       
-
         fileIndexStr = str(frameCount).zfill(6)
-
-      
-        
-        #setup(width=windowWidth,height=windowHeight)
         cv = getscreen().getcanvas()
-        #screensize(canvwidth=4100, canvheight=4000)
-
-        #cv.create_rectangle(-1,-1,1,1)
         cv.pack()
-        
         filename = baseFilename + "_" + fileIndexStr
         psFileName = filename + ".ps"
         cv.postscript(file=psFileName,
@@ -285,19 +249,8 @@ def makeMovie(startPower, endPower, stepsPerPower, baseFilename, startFrame = 0)
         
         print("n:"+str(n))
         frameCount = frameCount + 1
-        
-        
-        #white = (255, 255, 255)
-        # PIL create an empty image and draw object to draw on
-        # memory only, not visible
-        #image1 = Image.new("RGB", (4100, 4000), white)
-        #draw = ImageDraw.Draw(image1)
 
-        #image1.save(filename + ".jpg")
         
-
-#makeMovie(1, 6, 1000, "spbif")
-
 def makeMovieFrames(startFrame, endFrame, framesPerPower, baseFilename):
     baseFilename = "NOSYNC/" + baseFilename
     tracer(0,0)
