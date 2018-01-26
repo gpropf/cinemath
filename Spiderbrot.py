@@ -20,7 +20,11 @@ windowHeight = 4000
 captionCircleRadius = 20
 maxIterations = 200
 bifurcationAngle = 0.5
+
+global jerkThreshold, angleStep
 jerkThreshold = 0.0005
+angleStep = 90
+
 
 setup(windowWidth,windowHeight)
 
@@ -106,7 +110,7 @@ def makeTrack(drawingCb,completedCb, accelCb=(lambda p: p**2),
         v = v * d
         newTSF = maxPositionChangePerIteration/abs(v)
         timeScaleFactor = newTSF if (newTSF < 1) else 1
-        if abs(j) > jerkThreshold and i != 1:
+        if abs(j) > jerkThreshold and i != 0:
             i = maxIterations + 1
             (v1,v2) = bifurcateVector(v,bifurcationAngle)
             (v11,v12) = bifurcateVector(v1,bifurcationAngle/2)
@@ -198,7 +202,7 @@ def drawSpiderBifurcate(accelCb=(lambda p: p**2)):
     pensize(0.5)
     tracer(False)
     clear()
-    for theta in range(30,360,60):
+    for theta in range(int(angleStep/2),360,angleStep):
         thetaRads = theta*(2*pi/360)
         iv = cos(thetaRads) + sin(thetaRads) * 1j
         iv = iv * initialVelocityScaleFactor
@@ -268,7 +272,8 @@ def makeMovieFrames(startFrame, endFrame, framesPerPower, baseFilename):
         cv.postscript(file=psFileName,
                       colormode='color', rotate='0')
         
-        shellCmd = "pstopnm -ysize 4000 -xsize 4100 {0}.ps -stdout | ppmchange '#ffffff' '#000000' | pnmrotate -90 | ppmtojpeg >{0}.jpg".format(filename) 
+#        shellCmd = "pstopnm -ysize 4000 -xsize 4100 {0}.ps -stdout | ppmchange '#ffffff' '#000000' | pnmrotate -90 | ppmtojpeg >{0}.jpg".format(filename)
+        shellCmd = "pstopnm -ysize 4000 -xsize 4000 {0}.ps -stdout | ppmchange '#ffffff' '#000000' | ppmtojpeg >{0}.jpg".format(filename) 
         print(shellCmd)
         os.system(shellCmd)
         os.remove(psFileName)
@@ -287,7 +292,7 @@ def makeParallelMovie(startFrame, endFrame, framesPerPower, baseFilename, cpus=1
 
     cpu = 0
 #    threads = []
-    for cpuStartFrame in range(0,endFrame,framesPerCPU):
+    for cpuStartFrame in range(startFrame,endFrame,framesPerCPU):
 #        t = threading.Thread(target = makeMovieFrames, args = [cpuStartFrame, cpuStartFrame + framesPerCPU, framesPerPower, baseFilename])
         print("CPU = " + str(cpu) + ", startFrame = " + str(cpuStartFrame))
         cpu = cpu + 1
