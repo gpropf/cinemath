@@ -62,7 +62,7 @@ def bifurcateVector(v,alpha):
 
 # Keeps us from plotting too far into the generally boring regions
 # beyond a few units from the origin.
-maxDistanceFromOrigin = 2
+maxDistanceFromOrigin = 20
 
 def makeTrack(drawingCb,completedCb, accelCb=(lambda p: p**2),
               initialPosition=(0+0j),
@@ -128,18 +128,89 @@ def makeTrack(drawingCb,completedCb, accelCb=(lambda p: p**2),
     penup()
             
     #showturtle()
+
+
+def makeTrack2(drawingCb,completedCb, accelCb=(lambda p: p**2),
+              initialPosition=(0+0j),
+              initialVelocity=(initialVelocityScaleFactor +
+                               initialVelocityScaleFactor*1j),              
+              windowScaleFactor=1,dragCoefficient=0,remainingRecursions=2):
+    """ makeTrack:
+    drawingCb: callback to draw the current position
+    completedCb: callback to decide whether to terminate the current track
+    accelCb: callback to calculate the new acceleration based on position.
+    initialPosition: complex valued start position
+    initialVelocity: complex valued initial velocity, specifies the vector we
+                     start off in.
+    windowScaleFactor: the values of p,v,a,and j are in terms of positions in the complex plane.
+                       generally, these are small values between the rectangle whose upper left
+                       and lower right corners are at -2-2j and 2+2j, respectively. These values
+                       are too small to plot so we scale the plot accordingly. A value of 500
+                       here is a good rule of thumb.
+    dragCoefficient: This isn't a true drag coefficient but is subtracted
+                     from 1 to get the multiplier we use per iteration for v.
+                     Basically, larger values make the projectile slow down faster.
+                     Use 0 for frictionless movement."""
+    if remainingRecursions == 0:
+        return
+    hideturtle()
+    timeScaleFactor = 1
+    p_init = p = initialPosition
+    v = initialVelocity
+    a = 0+0j
+    j = 0+0j
+    d = 1 - dragCoefficient
+    i = 0
+    #print("initial vel:" + str(v))
+    penup()
+    goto(initialPosition.real*windowScaleFactor,initialPosition.imag*windowScaleFactor)
+    pendown()
+    tracer(0)
+    while(not completedCb(i,p - p_init,v,a,j,maxIterations)):
+        drawingCb(i,p*windowScaleFactor,v,a,j)
+        old_a = a
+        a = accelerationScalingFactor * accelCb(p)
+        j = a - old_a
+        #print ("Accel = " + str(abs(a)))
+        v = v + a
+        v = v * d
+        newTSF = maxPositionChangePerIteration/abs(v)
+        timeScaleFactor = newTSF if (newTSF < 1) else 1
+        if abs(a) > accelThreshold and i != 0:
+            i = maxIterations + 1
+            (v1,v2) = bifurcateVector(v,bifurcationAngle)
+            (v11,v12) = bifurcateVector(v1,bifurcationAngle/2)
+            (v21,v22) = bifurcateVector(v2,bifurcationAngle/2)
+
+            for vbif in [v11,v12,v21,v22]:
+            
+                makeTrack2(drawingCb,completedCb, accelCb=accelCb,
+                          initialPosition=p,
+                          initialVelocity=vbif,              
+                          windowScaleFactor=1,dragCoefficient=0,remainingRecursions = remainingRecursions - 1)
+    
+        p = p + v * newTSF       
+        i = i + 1
+    penup()
+            
+    #showturtle()
+
+
+
     
 def dcb(i,p,v,a,j):
     newTSF = maxPositionChangePerIteration/abs(v)
     timeScaleFactor = newTSF if (newTSF < 1) else 1
     abs_a = abs(a)
     
+    green = accelThreshold/(2*abs_a) if (abs_a > accelThreshold) else 1
+    
     #green = 0 if (abs_a == 0 or log(abs_a) == 0) else 1 - 1/abs(log(abs_a))
     #max_p_size = 15
     #p_size = max_p_size - (green * max_p_size)
     pensize(2)
     #print("Green: " + str(green))
-    color((1-timeScaleFactor,0,timeScaleFactor))
+    color((1-timeScaleFactor,1-green,timeScaleFactor))
     goto(p.real,p.imag)
 
 def ccb(i,p,v,a,j,maxiter):
@@ -195,7 +266,7 @@ def drawSpider(accelCb=(lambda p: p**2)):
 
 
 
-def drawSpiderBifurcate(accelCb=(lambda p: p**2)):
+def drawSpiderBifurcate(accelCb=(lambda p: p**2), makeTrackCB=makeTrack):
     """ drawSpider: single argument is the callback that computes the
     acceleration from p, the position. """
     x = y = 0
@@ -207,7 +278,7 @@ def drawSpiderBifurcate(accelCb=(lambda p: p**2)):
         iv = cos(thetaRads) + sin(thetaRads) * 1j
         iv = iv * initialVelocityScaleFactor
         iv = iv * 0.5
-        makeTrack(accelCb=accelCb, drawingCb=dcb,completedCb=ccb,
+        makeTrackCB(accelCb=accelCb, drawingCb=dcb,completedCb=ccb,
                   windowScaleFactor=1,initialPosition=(x+y*1j),
                   initialVelocity=iv,
                   dragCoefficient=0.0)
@@ -255,14 +326,14 @@ def makeMovie(startPower, endPower, stepsPerPower, baseFilename, startFrame = 0)
         frameCount = frameCount + 1
 
         
-def makeMovieFrames(startFrame, endFrame, framesPerPower, baseFilename):
+def makeMovieFrames(startFrame, endFrame, framesPerPower, baseFilename, makeTrackCB=makeTrack):
     baseFilename = "NOSYNC/" + baseFilename
     tracer(0,0)
     hideturtle()
 
     for frame in range(startFrame, endFrame):
         n = frame / framesPerPower
-        drawSpiderBifurcate((lambda p: p**n))
+        drawSpiderBifurcate((lambda p: p**n), makeTrackCB=makeTrackCB)
         update()
         fileIndexStr = str(frame).zfill(6)
         cv = getscreen().getcanvas()

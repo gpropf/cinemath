@@ -14,6 +14,7 @@ import Spiderbrot
 turtleBoxCorner = 1
 
 Spiderbrot.angleStep = 60
-Spiderbrot.jerkThreshold = 5.6e-5
+#Spiderbrot.jerkThreshold = 5.6e-5
+Spiderbrot.accelThreshold = 0.001
 turtle.setworldcoordinates(-turtleBoxCorner,-turtleBoxCorner,turtleBoxCorner,turtleBoxCorner)
-Spiderbrot.makeMovieFrames(0, 10000, 1000, "spbif4")
+Spiderbrot.makeMovieFrames(0, 10000, 1000, "spbif5", makeTrackCB=Spiderbrot.makeTrack2 )
